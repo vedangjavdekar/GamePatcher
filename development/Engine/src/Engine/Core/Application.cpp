@@ -33,7 +33,7 @@ namespace Engine
 
 	public:
 		TextButton(const char* text = "Button",
-			size_t fontsize = 24,
+			int fontsize = 24,
 			Rectangle buttonRect = { 0,0,200,60 },
 			ButtonStyle buttonStyle = ButtonStyle(),
 			TextStyle textStyle = TextStyle(),
@@ -50,7 +50,7 @@ namespace Engine
 			CalculateLayout();
 		}
 
-		void SetText(const std::string& newText, const size_t fontSize)
+		void SetText(const std::string& newText, const int fontSize)
 		{
 			m_Text = newText;
 			m_FontSize = fontSize;
@@ -89,15 +89,15 @@ namespace Engine
 			{
 			case ButtonState::Normal:
 				DrawRectangleRec(m_ButtonRect, m_ButtonStyle.Normal);
-				DrawText(m_Text.c_str(), m_TextRect.x, m_TextRect.y, m_FontSize, m_TextStyle.Normal);
+				DrawText(m_Text.c_str(), (int)m_TextRect.x, (int)m_TextRect.y, m_FontSize, m_TextStyle.Normal);
 				break;
 			case ButtonState::Hovered:
 				DrawRectangleRec(m_ButtonRect, m_ButtonStyle.Hovered);
-				DrawText(m_Text.c_str(), m_TextRect.x, m_TextRect.y, m_FontSize, m_TextStyle.Hovered);
+				DrawText(m_Text.c_str(), (int)m_TextRect.x, (int)m_TextRect.y, m_FontSize, m_TextStyle.Hovered);
 				break;
 			case ButtonState::Pressed:
 				DrawRectangleRec(m_ButtonRect, m_ButtonStyle.Pressed);
-				DrawText(m_Text.c_str(), m_TextRect.x, m_TextRect.y, m_FontSize, m_TextStyle.Pressed);
+				DrawText(m_Text.c_str(), (int)m_TextRect.x, (int)m_TextRect.y, m_FontSize, m_TextStyle.Pressed);
 				break;
 			default:
 				break;
@@ -141,7 +141,7 @@ namespace Engine
 		{
 			Font defaultFont = GetFontDefault();
 
-			Vector2 textSize{ MeasureText(m_Text.c_str(), m_FontSize), m_FontSize };
+			Vector2 textSize{ (float)MeasureText(m_Text.c_str(), (int)m_FontSize), (float)m_FontSize };
 
 
 			m_TextRect.width = textSize.x;
@@ -159,7 +159,7 @@ namespace Engine
 
 	private:
 		std::string m_Text;
-		size_t m_FontSize;
+		int m_FontSize;
 		Vector4 m_Padding;// t, l, b, r
 		bool m_AdjustForOverflow;
 
@@ -179,6 +179,19 @@ namespace Engine
 		:m_Running(true)
 	{
 		s_Instance = this;
+
+		std::string appDir(GetApplicationDirectory());
+
+#ifndef BUILD_SHIPPING
+		size_t binPos = appDir.find("bin");
+		if (binPos != std::string::npos)
+		{
+			m_AppBasePath = appDir.substr(0, binPos);
+		}
+#else
+		m_AppBasePath = appDir;
+#endif
+
 	}
 
 	Application::~Application()
@@ -203,6 +216,12 @@ namespace Engine
 		
 		bool fullScreen = false;
 
+
+		std::string imagePath = m_AppBasePath + "assets/RTS/Crate.png";
+		Image image = LoadImage(imagePath.c_str());
+		Texture2D texture = LoadTextureFromImage(image);          // Image converted to texture, GPU memory (VRAM)
+		UnloadImage(image);   // Once image has been converted to texture and uploaded to VRAM, it can be unloaded from RAM
+
         // Main game loop
         while (!m_Window->ShouldClose())    // Detect window close button or ESC key
         {
@@ -217,6 +236,8 @@ namespace Engine
 			m_Window->BeginDraw();
 
 			button.Draw();
+
+			DrawTexture(texture, Window::GAME_SCREEN_WIDTH/ 2 - texture.width / 2, Window::GAME_SCREEN_HEIGHT/ 2 - texture.height / 2, WHITE);
 
 			versionText.Draw();
 			m_Window->EndDraw();

@@ -8,6 +8,6 @@
 namespace Engine
 {
     const size_t MAJOR_VERSION = 1;
-    const size_t MINOR_VERSION = 0;
-    const char* VERSION_STRING = "version1.0";
+    const size_t MINOR_VERSION = 1;
+    const char* VERSION_STRING = "version1.1";
 }

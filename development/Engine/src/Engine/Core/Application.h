@@ -2,6 +2,8 @@
 #include "Engine/Core/Base.h"
 #include "Engine/Core/Window.h"
 
+#include <string>
+
 int main(int argc, char** argv);
 
 namespace Engine
@@ -18,10 +20,13 @@ namespace Engine
         
         Window& GetWindow() { return *m_Window; }
 
+        const char* GetApplicationBasePath()const { return m_AppBasePath.c_str(); }
     private:
         void Run();
 
     private:
+        std::string m_AppBasePath;
+
         bool m_Running = false;
 
         Scope<Window> m_Window;

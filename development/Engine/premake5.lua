@@ -34,9 +34,13 @@ project "Engine"
     }
 
     filter "configurations:Debug"
-        defines { "DEBUG" }
+        defines { "BUILD_DEBUG" }
         symbols "On"
 
     filter "configurations:Release"
-        defines { "NDEBUG" }
+        defines { "BUILD_RELEASE" }
+        optimize "On"
+
+    filter "configurations:Shipping"
+        defines { "BUILD_SHIPPING" }
         optimize "On"

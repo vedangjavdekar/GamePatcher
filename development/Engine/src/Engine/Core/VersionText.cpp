@@ -18,6 +18,6 @@ namespace Engine
 	void VersionText::Draw()
 	{
 		Vector2 textPosition{ 0,Engine::Window::GAME_SCREEN_HEIGHT - m_TextSize.y };
-		DrawText(VERSION_STRING, textPosition.x, textPosition.y, VersionTextFontSize, VersionTextColor);
+		DrawText(VERSION_STRING, (int)textPosition.x, (int)textPosition.y, VersionTextFontSize, VersionTextColor);
 	}
 }

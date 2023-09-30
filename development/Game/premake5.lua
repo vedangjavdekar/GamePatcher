@@ -5,7 +5,6 @@ project "Game"
 
     targetdir(targetPath)
     objdir(objectPath)
-    debugdir(debugPath)
     location(projectLocation)
 
     dependson {
@@ -29,9 +28,16 @@ project "Game"
     }
 
     filter "configurations:Debug"
-        defines { "DEBUG" }
+        defines { "BUILD_DEBUG" }
         symbols "On"
 
     filter "configurations:Release"
-        defines { "NDEBUG" }
+        defines { "BUILD_RELEASE" }
         optimize "On"
+
+    filter "configurations:Shipping"
+        defines { "BUILD_SHIPPING" }
+        optimize "On"
+        postbuildcommands{
+            "{COPYDIR} %{wks.location}/assets ".. targetPath .. "/assets" 
+        }

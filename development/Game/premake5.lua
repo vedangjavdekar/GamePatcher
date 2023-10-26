@@ -39,5 +39,7 @@ project "Game"
         defines { "BUILD_SHIPPING" }
         optimize "On"
         postbuildcommands{
+            "{RMDIR} "..targetPath.."/assets",
+            "{RMDIR} "..targetPath.."/data",
             "{COPYDIR} %{wks.location}/assets ".. targetPath .. "/assets" 
         }

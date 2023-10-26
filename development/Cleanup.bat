@@ -15,6 +15,10 @@ IF EXIST .\bin-int (
     RMDIR /S /Q .\bin-int
 )
 
+IF EXIST .\buildSystem\config\*.ini (
+    DEL /S /Q .\buildSystem\config\*.ini
+)
+
 IF EXIST .\*.sln (
     DEL /S /Q .\*.sln
 )

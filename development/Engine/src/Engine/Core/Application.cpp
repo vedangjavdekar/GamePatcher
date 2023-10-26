@@ -4,6 +4,7 @@
 #include "raymath.h"
 
 #include "VersionText.h"
+#include "Version.h"
 
 namespace Engine
 {
@@ -216,8 +217,18 @@ namespace Engine
 		
 		bool fullScreen = false;
 
-
-		std::string imagePath = m_AppBasePath + "assets/RTS/Crate.png";
+		// TODO: Refactor
+		std::string imagePath;
+		
+		if (MAJOR_VERSION == 1 && MINOR_VERSION == 1)
+		{
+			imagePath = m_AppBasePath + "assets/RTS/Crate_Big_Stack2.png";
+		}
+		else 
+		{
+			imagePath = m_AppBasePath + "assets/RTS/Crate.png";
+		}
+		
 		Image image = LoadImage(imagePath.c_str());
 		Texture2D texture = LoadTextureFromImage(image);          // Image converted to texture, GPU memory (VRAM)
 		UnloadImage(image);   // Once image has been converted to texture and uploaded to VRAM, it can be unloaded from RAM

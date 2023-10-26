@@ -1,17 +1,32 @@
-import currversion
+import pathUtils
+import app_version
 import sys
-from pathlib import Path
 
-with open("buildSystem/templates/versionCPP.template") as version_file:
-    file_string = "".join(version_file.readlines())
-    formatted = file_string.format(major=currversion.major,minor=currversion.minor,string=currversion.version_string)
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Please provide the cpp and lua filepaths for creating the templates.")
+        sys.exit()
 
-    with open(sys.argv[1],'w') as header_file:
-        header_file.write(formatted)
+    version = app_version.load(pathUtils.CURR_VERSION_FILE, True)
 
-with open("buildSystem/templates/versionLUA.template") as version_file:
-    file_string = "".join(version_file.readlines())
-    formatted = file_string.format(major=currversion.major,minor=currversion.minor)
+    with open(
+        pathUtils.BUILD_SYS_DIR + "\\templates\\versionCPP.template", "r"
+    ) as version_file:
+        file_string = "".join(version_file.readlines())
+        formatted = file_string.format(
+            major=version.major,
+            minor=version.minor,
+            string=version.version_string,
+        )
 
-    with open('Version.lua','w') as header_file:
-        header_file.write(formatted)
+        with open(sys.argv[1], "w") as header_file:
+            header_file.write(formatted)
+
+    with open(
+        pathUtils.BUILD_SYS_DIR + "\\templates\\versionLUA.template", "r"
+    ) as version_file:
+        file_string = "".join(version_file.readlines())
+        formatted = file_string.format(major=version.major, minor=version.minor)
+
+        with open(sys.argv[2], "w") as header_file:
+            header_file.write(formatted)

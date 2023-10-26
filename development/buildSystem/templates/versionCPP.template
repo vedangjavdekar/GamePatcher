@@ -7,7 +7,7 @@
 
 namespace Engine
 {{
-    const size_t MAJOR_VERSION = {major};
-    const size_t MINOR_VERSION = {minor};
-    const char* VERSION_STRING = "{string}";
+    static const size_t MAJOR_VERSION = {major};
+    static const size_t MINOR_VERSION = {minor};
+    static const char* VERSION_STRING = "{string}";
 }}

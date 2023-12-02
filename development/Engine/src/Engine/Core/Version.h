@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 
 /*
 * DO NOT MAKE CHANGES INTO THIS FILE.
@@ -7,7 +8,7 @@
 
 namespace Engine
 {
-    static const size_t MAJOR_VERSION = 1;
-    static const size_t MINOR_VERSION = 2;
-    static const char* VERSION_STRING = "version1.2";
+    constexpr const size_t MAJOR_VERSION = 3;
+    constexpr const size_t MINOR_VERSION = 1;
+    constexpr const char* VERSION_STRING = "version3.1";
 }

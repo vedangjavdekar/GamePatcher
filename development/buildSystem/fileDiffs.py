@@ -8,13 +8,15 @@ from os import listdir
 from os.path import isfile, isdir, join
 
 
-def get_all_files(mypath):
+def get_all_files(mypath, ignore=None):
     fs = []
     for f in listdir(mypath):
         if isdir(join(mypath, f)):
             ks = get_all_files(join(mypath, f))
             fs.extend(ks)
         if isfile(join(mypath, f)):
+            if ignore and f in ignore:
+                continue
             fs.append(join(mypath, f))
     return fs
 
@@ -24,7 +26,7 @@ def get_diff_files(current_build: buildInfo.Build, src_root_dir, dst_root_dir, d
     for name in dcmp.left_only:
         fname = dcmp.left + "\\" + name
         if isdir(fname):
-            res = get_all_files(fname)
+            res = get_all_files(fname, dcmp.ignore)
             for f in res:
                 fsize = os.path.getsize(f)
                 fpath = str(Path(f).relative_to(src_root_dir))
@@ -41,7 +43,7 @@ def get_diff_files(current_build: buildInfo.Build, src_root_dir, dst_root_dir, d
     for name in dcmp.right_only:
         fname = dcmp.right + "\\" + name
         if isdir(fname):
-            res = get_all_files(fname)
+            res = get_all_files(fname, dcmp.ignore)
             for f in res:
                 fsize = os.path.getsize(f)
                 fpath = str(Path(f).relative_to(dst_root_dir))
@@ -70,9 +72,5 @@ def get_diff_files(current_build: buildInfo.Build, src_root_dir, dst_root_dir, d
 def generate_folder_diff(
     current_build: buildInfo.Build, src_root_dir: str, dst_root_dir: str
 ):
-    dcmp = dircmp(
-        src_root_dir,
-        dst_root_dir,
-        ignore=["build_manifest.json"],
-    )
+    dcmp = dircmp(src_root_dir, dst_root_dir)
     get_diff_files(current_build, src_root_dir, dst_root_dir, dcmp)

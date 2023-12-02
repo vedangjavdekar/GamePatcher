@@ -1,6 +1,7 @@
 import subprocess
 import sys
 import shutil
+from enum import Enum
 
 from pathlib import Path
 
@@ -22,13 +23,17 @@ errorFont = None
 defaultFont = None
 logFont = None
 
-INITIAL_CHECKS = "InitialChecks"
-FILE_CHECKS = "DiffFiles"
-CREATE_TAR = "CreateTar"
-UPLOAD_ARCHIVE = "UploadArchive"
-VERSION_INC = "VersionInc"
 
-validation = {INITIAL_CHECKS: 0, FILE_CHECKS: 0, UPLOAD_ARCHIVE: 0, VERSION_INC: 0}
+class CheckPoint(Enum):
+    Undefined = -1
+    VersionCheck = 0
+    DiffCheck = 1
+    TARCheck = 2
+    UploadCheck = 3
+    IncVersionCheck = 4
+
+
+currentCheckpoint = CheckPoint.Undefined.value
 
 UpdateStateEvent, EVT_UPDATE_STATE = wx.lib.newevent.NewEvent()
 ResetEvent, EVT_RESET = wx.lib.newevent.NewEvent()
@@ -184,16 +189,14 @@ class DirectoryPanel(CustomPanelBase):
                     "[INFO]: No previous build found, this is the first time building the project."
                 )
 
+        canIncrement = True
         if len(errStrs):
             self.frame.SetStatusText(errorCodes.ERROR_CODES[ecode])
-            validation[INITIAL_CHECKS] = -1
-
+            canIncrement = False
             for err in errStrs:
                 print(err)
-        else:
-            validation[INITIAL_CHECKS] = 1
 
-        evt = UpdateStateEvent()
+        evt = UpdateStateEvent(incCheckpoint=canIncrement)
         wx.PostEvent(self.frame, evt)
 
 
@@ -210,50 +213,62 @@ class DiffPanel(CustomPanelBase):
 
     def onInit(self):
         self.diffFileButton = wx.Button(self, wx.ID_ANY, "Diff Files")
-        self.diffFileButton.Bind(wx.EVT_BUTTON, self.performTask)
+        self.diffFileButton.Bind(wx.EVT_BUTTON, self.diffBtnCallback)
         self.createTarButton = wx.Button(self, wx.ID_ANY, "Create Archive")
-        self.createTarButton.Bind(wx.EVT_BUTTON, self.performTask)
+        self.createTarButton.Bind(wx.EVT_BUTTON, self.createArchiveBtnCallback)
         self.uploadTarButton = wx.Button(self, wx.ID_ANY, "Upload To Server")
-        self.uploadTarButton.Bind(wx.EVT_BUTTON, self.performTask)
+        self.uploadTarButton.Bind(wx.EVT_BUTTON, self.uploadBtnCallback)
 
         self.sizer.Add(self.diffFileButton, 0, wx.EXPAND, 5)
         self.sizer.Add(self.createTarButton, 0, wx.EXPAND, 5)
         self.sizer.Add(self.uploadTarButton, 0, wx.EXPAND, 5)
 
     def onStateUpdate(self, evt):
-        self.diffFileButton.Enable(validation[INITIAL_CHECKS] == 1)
-        self.createTarButton.Enable(validation[FILE_CHECKS] >= 1)
-        self.uploadTarButton.Enable(validation[FILE_CHECKS] == 2)
+        self.diffFileButton.Enable(currentCheckpoint >= CheckPoint.VersionCheck.value)
+        self.createTarButton.Enable(currentCheckpoint >= CheckPoint.DiffCheck.value)
+        self.uploadTarButton.Enable(currentCheckpoint >= CheckPoint.TARCheck.value)
 
     def performTask(self, evt=None):
-        shouldGenerateEvent = False
+        canIncrement = False
         ecode = errorCodes.NO_ERROR
-        if validation[FILE_CHECKS] <= 0:
+        if currentCheckpoint == CheckPoint.VersionCheck.value:
             ecode = buildProcess.get_diff_directory_result(
                 self.build, self.src, self.dst
             )
             if ecode == errorCodes.NO_ERROR:
-                validation[FILE_CHECKS] = 1
-                shouldGenerateEvent = True
+                canIncrement = True
 
-        elif validation[FILE_CHECKS] == 1:
+        elif currentCheckpoint == CheckPoint.DiffCheck.value:
             ecode = tarUtils.create_archive(self.build.current_version)
             if ecode == errorCodes.NO_ERROR:
-                validation[FILE_CHECKS] = 2
-                shouldGenerateEvent = True
+                canIncrement = True
 
-        elif validation[FILE_CHECKS] == 2:
+        elif currentCheckpoint == CheckPoint.TARCheck.value:
             ecode = buildProcess.upload_build_to_server(self.build.current_version)
             if ecode == errorCodes.NO_ERROR:
-                validation[FILE_CHECKS] = 3
-                shouldGenerateEvent = True
+                canIncrement = True
 
         evt.Skip()
-        if shouldGenerateEvent:
-            evt = UpdateStateEvent()
+        if canIncrement:
+            evt = UpdateStateEvent(incCheckpoint=canIncrement)
             wx.PostEvent(self.frame, evt)
 
         self.frame.SetStatusText(errorCodes.ERROR_CODES[ecode])
+
+    def diffBtnCallback(self, evt):
+        global currentCheckpoint
+        currentCheckpoint = CheckPoint.VersionCheck.value
+        self.performTask(evt)
+
+    def createArchiveBtnCallback(self, evt):
+        global currentCheckpoint
+        currentCheckpoint = CheckPoint.DiffCheck.value
+        self.performTask(evt)
+
+    def uploadBtnCallback(self, evt):
+        global currentCheckpoint
+        currentCheckpoint = CheckPoint.TARCheck.value
+        self.performTask(evt)
 
 
 class VersionIncrementPanel(CustomPanelBase):
@@ -273,17 +288,15 @@ class VersionIncrementPanel(CustomPanelBase):
         self.sizer.Add(self.incMajorCB, 1, wx.EXPAND, 5)
 
     def onStateUpdate(self, evt):
-        self.Enable(validation[FILE_CHECKS] >= 3)
+        self.Enable(currentCheckpoint == CheckPoint.UploadCheck.value)
 
     def performTask(self, evt=None):
         ecode, version_saved = buildProcess.increment_version(
             self.build, self.incMajorCB.GetValue()
         )
         if ecode == errorCodes.NO_ERROR:
-            validation[VERSION_INC] = 1
-
             if version_saved:
-                evt = UpdateStateEvent()
+                evt = UpdateStateEvent(incCheckpoint=True)
                 wx.PostEvent(self.frame, evt)
 
         self.frame.SetStatusText(errorCodes.ERROR_CODES[ecode])
@@ -609,19 +622,22 @@ class BuildGUI(wx.Frame):
         return
 
     def handleStatusUpdate(self, evt):
+        global currentCheckpoint
+        if evt.incCheckpoint:
+            currentCheckpoint += 1
+
         for panel in self.stateUpdatePanels:
             panel.onStateUpdate(evt)
 
-        if validation[VERSION_INC] == 1:
+        if currentCheckpoint == CheckPoint.IncVersionCheck.value:
             self.handleGenerateProjectFiles()
             self.handleReset()
         evt.Skip()
 
     def handleReset(self, evt=None):
         self.handleGenerateProjectFiles()
-        global validation
-
-        validation = dict.fromkeys(validation, 0)
+        global currentCheckpoint
+        currentCheckpoint = CheckPoint.Undefined.value
 
         self.build = buildInfo.Build()
         buildProcess.load_version_info(self.build)

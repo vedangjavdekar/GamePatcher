@@ -1,8 +1,6 @@
 # Standard Library
 from pathlib import Path
 import os
-import subprocess
-import sys
 import tarfile
 import pprint
 import json
@@ -17,7 +15,6 @@ import app_version
 import pathUtils
 
 import fileDiffs
-import tarUtils
 import buildFlags
 import errorCodes
 
@@ -102,7 +99,7 @@ def get_diff_directory_result(
     fileDiffs.generate_folder_diff(current_build, src_root_dir, dst_root_dir)
     pprint.pprint(current_build.to_json())
     with open(
-        pathUtils.get_manifest_filepath(current_build.current_version, True),
+        pathUtils.get_manifest_filepath(),
         "w",
     ) as manifestFile:
         json.dump(current_build.to_json(), manifestFile)
@@ -137,7 +134,7 @@ def increment_version(build: buildInfo.Build, incMaj: bool) -> str:
 
 def upload_build_to_server(version: buildInfo.VersionInfo):
     print(f"Uploading {version.version_string} to the server...")
-    build_manifest_path = pathUtils.get_manifest_filepath(version)
+    build_manifest_path = pathUtils.get_manifest_filepath()
     tar_file_path = pathUtils.get_tar_filepath(version)
 
     print(f"build manifest path: {build_manifest_path}")
@@ -172,97 +169,97 @@ def upload_build_to_server(version: buildInfo.VersionInfo):
     return errorCodes.NO_ERROR
 
 
-if __name__ == "__main__":
-    _flags = DEFAULT_FLAGS
+# if __name__ == "__main__":
+#     _flags = DEFAULT_FLAGS
 
-    current_build = buildInfo.Build()
-    load_version_info(current_build)
+#     current_build = buildInfo.Build()
+#     load_version_info(current_build)
 
-    src_root_dir, dst_root_dir = get_directories(current_build.current_version)
+#     src_root_dir, dst_root_dir = get_directories(current_build.current_version)
 
-    if _flags.only_diff:
-        get_diff_directory_result(current_build, src_root_dir, dst_root_dir)
-        sys.exit()
+#     if _flags.only_diff:
+#         get_diff_directory_result(current_build, src_root_dir, dst_root_dir)
+#         sys.exit()
 
-    if _flags.create_staging and not _flags.only_upload:
-        if not dst_root_dir:
-            print(
-                f"[ERROR]: Shipping build for {current_build.current_version.version_string} not found. Make sure you have built the project in Shipping configuration."
-            )
-            sys.exit()
+#     if _flags.create_staging and not _flags.only_upload:
+#         if not dst_root_dir:
+#             print(
+#                 f"[ERROR]: Shipping build for {current_build.current_version.version_string} not found. Make sure you have built the project in Shipping configuration."
+#             )
+#             sys.exit()
 
-        shouldDiffFolders = True
-        if current_build.current_version.is_valid():
-            print("Found Version: " + str(current_build.current_version))
-        else:
-            print("Current Version not found.")
+#         shouldDiffFolders = True
+#         if current_build.current_version.is_valid():
+#             print("Found Version: " + str(current_build.current_version))
+#         else:
+#             print("Current Version not found.")
 
-        if current_build.prev_version.is_valid():
-            print("Found Version: " + str(current_build.prev_version))
-        else:
-            print("Previous Version not found.")
-            shouldDiffFolders = False
+#         if current_build.prev_version.is_valid():
+#             print("Found Version: " + str(current_build.prev_version))
+#         else:
+#             print("Previous Version not found.")
+#             shouldDiffFolders = False
 
-        if shouldDiffFolders:
-            assert pathUtils.checkVersionBinDir(current_build.current_version)
-            assert pathUtils.checkVersionStagingDir(current_build.prev_version)
-            print("Version Files found. Creating diffs...")
-            temp_tar_path = pathUtils.get_temp_extract_dir(current_build.prev_version)
-            with tarfile.open(
-                pathUtils.get_tar_filepath(current_build.prev_version), "r"
-            ) as prev_version_tar:
-                prev_version_tar.extractall(pathUtils.STAGING_DIR)
+#         if shouldDiffFolders:
+#             assert pathUtils.checkVersionBinDir(current_build.current_version)
+#             assert pathUtils.checkVersionStagingDir(current_build.prev_version)
+#             print("Version Files found. Creating diffs...")
+#             temp_tar_path = pathUtils.get_temp_extract_dir(current_build.prev_version)
+#             with tarfile.open(
+#                 pathUtils.get_tar_filepath(current_build.prev_version), "r"
+#             ) as prev_version_tar:
+#                 prev_version_tar.extractall(pathUtils.STAGING_DIR)
 
-            src_root_dir = temp_tar_path
-            pass
-        else:
-            src_root_dir = pathUtils.STAGING_DIR + "\\version0_0"
-            if not Path(src_root_dir).exists():
-                os.mkdir(src_root_dir)
+#             src_root_dir = temp_tar_path
+#             pass
+#         else:
+#             src_root_dir = pathUtils.STAGING_DIR + "\\version0_0"
+#             if not Path(src_root_dir).exists():
+#                 os.mkdir(src_root_dir)
 
-        print(f"SRC DIR: {src_root_dir}")
-        print(f"DST DIR: {dst_root_dir}")
+#         print(f"SRC DIR: {src_root_dir}")
+#         print(f"DST DIR: {dst_root_dir}")
 
-        fileDiffs.generate_folder_diff(current_build, src_root_dir, dst_root_dir)
-        pprint.pprint(current_build.to_json())
-        with open(
-            pathUtils.get_manifest_filepath(current_build.current_version, True),
-            "w",
-        ) as manifestFile:
-            json.dump(current_build.to_json(), manifestFile)
+#         fileDiffs.generate_folder_diff(current_build, src_root_dir, dst_root_dir)
+#         pprint.pprint(current_build.to_json())
+#         with open(
+#             pathUtils.get_manifest_filepath(current_build.current_version, True),
+#             "w",
+#         ) as manifestFile:
+#             json.dump(current_build.to_json(), manifestFile)
 
-        shutil.rmtree(src_root_dir)
+#         shutil.rmtree(src_root_dir)
 
-        if (
-            tarUtils.create_archive(current_build.current_version)
-            == errorCodes.NO_ERROR
-        ):
-            print("Archive Created successfully!")
-        else:
-            print("Error creating the archive... Aborting.")
-            sys.exit()
+#         if (
+#             tarUtils.create_archive(current_build.current_version)
+#             == errorCodes.NO_ERROR
+#         ):
+#             print("Archive Created successfully!")
+#         else:
+#             print("Error creating the archive... Aborting.")
+#             sys.exit()
 
-    if _flags.upload_server or _flags.only_upload:
-        upload_build_to_server(current_build.current_version)
+#     if _flags.upload_server or _flags.only_upload:
+#         upload_build_to_server(current_build.current_version)
 
-    if _flags.create_staging and not _flags.only_upload:
-        cached_curr_version = copy.copy(current_build.current_version)
-        version_needs_saving = False
-        if _flags.inc_ver:
-            current_build.current_version.minor += 1
-            version_needs_saving = True
-        if _flags.inc_maj_ver:
-            current_build.current_version.major += 1
-            current_build.current_version.minor = 0
-            version_needs_saving = True
+#     if _flags.create_staging and not _flags.only_upload:
+#         cached_curr_version = copy.copy(current_build.current_version)
+#         version_needs_saving = False
+#         if _flags.inc_ver:
+#             current_build.current_version.minor += 1
+#             version_needs_saving = True
+#         if _flags.inc_maj_ver:
+#             current_build.current_version.major += 1
+#             current_build.current_version.minor = 0
+#             version_needs_saving = True
 
-        if version_needs_saving:
-            current_build.current_version.create_version_string()
-            app_version.save(current_build.current_version, pathUtils.CURR_VERSION_FILE)
+#         if version_needs_saving:
+#             current_build.current_version.create_version_string()
+#             app_version.save(current_build.current_version, pathUtils.CURR_VERSION_FILE)
 
-        if _flags.write_staging_ver:
-            current_build.prev_version = cached_curr_version
-            current_build.prev_version.create_version_string()
-            app_version.save(current_build.prev_version, pathUtils.PREV_VERSION_FILE)
+#         if _flags.write_staging_ver:
+#             current_build.prev_version = cached_curr_version
+#             current_build.prev_version.create_version_string()
+#             app_version.save(current_build.prev_version, pathUtils.PREV_VERSION_FILE)
 
-        subprocess.run(["./GenerateProjectFiles.bat"], stdout=sys.stdout)
+#         subprocess.run(["./GenerateProjectFiles.bat"], stdout=sys.stdout)

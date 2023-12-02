@@ -52,12 +52,14 @@ def get_manifest_dir(version: VersionInfo, createDir=False) -> str:
     return ""
 
 
-def get_manifest_filepath(version: VersionInfo, createDir=False) -> str:
-    dir_path = get_manifest_dir(version, createDir)
-    if dir_path:
-        dir_path = Path(dir_path + "\\build_manifest" + MANIFEST_FILE_EXT)
-        return str(dir_path.absolute().resolve())
-    return ""
+def get_manifest_filepath() -> str:
+    dir_path = Path(__file__).parent / "content"
+    if not dir_path.exists():
+        Path.mkdir(dir_path)
+
+    fileName = "build_manifest" + MANIFEST_FILE_EXT
+    dir_path = dir_path / fileName
+    return str(dir_path.absolute().resolve())
 
 
 def checkVersionStagingDir(version: VersionInfo):

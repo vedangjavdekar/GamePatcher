@@ -41,5 +41,6 @@ project "Game"
         postbuildcommands{
             "{RMDIR} "..targetPath.."/assets",
             "{RMDIR} "..targetPath.."/data",
-            "{COPYDIR} %{wks.location}/assets ".. targetPath .. "/assets" 
+            "{COPYDIR} %{wks.location}/assets ".. targetPath .. "/assets",
+            "{COPYDIR} %{wks.location}/buildSystem/config ".. targetPath .. "/data" 
         }

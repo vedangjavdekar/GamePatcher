@@ -8,7 +8,7 @@
 
 namespace Engine
 {
-    constexpr const size_t MAJOR_VERSION = 3;
+    constexpr const size_t MAJOR_VERSION = 2;
     constexpr const size_t MINOR_VERSION = 1;
-    constexpr const char* VERSION_STRING = "version3.1";
+    constexpr const char* VERSION_STRING = "version2.1";
 }

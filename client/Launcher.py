@@ -19,9 +19,7 @@ if SEARCH_PATH.exists():
     _config.read(SEARCH_PATH)
     version_string = _config["DEFAULT"]["version_string"]
 
-    result = requests.get(
-        f"http://localhost:3000/download?curr={version_string}&update=2.0"
-    )
+    result = requests.get(f"http://localhost:3000/download?curr={version_string}")
 
     match (result.headers["content-type"]):
         case "text/html":
@@ -46,7 +44,7 @@ if SEARCH_PATH.exists():
             shutil.rmtree(TEMP_PATH)
 
 else:
-    result = requests.get("http://localhost:3000/download?update=version1.0")
+    result = requests.get("http://localhost:3000/download")
     match (result.headers["content-type"]):
         case "text/html":
             print(result.text)

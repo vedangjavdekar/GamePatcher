@@ -148,6 +148,11 @@ const runReleaseDatesQuery = async (db, version_details) => {
 		(strObj) => "'" + strObj.VersionString + "'"
 	);
 
+	if (versionStrings.length === 0) {
+		console.log("No need to update");
+		return null;
+	}
+
 	const gatherFilesStringQuery = `SELECT VersionString, Filepath, Action 
 		FROM FileInfo f1
 		WHERE VersionString IN (
@@ -173,11 +178,11 @@ const runReleaseDatesQuery = async (db, version_details) => {
 		}
 	});
 
-	if (deleteFiles.length) {
-		if (!fs.existsSync(buildsPath + tempDirPath)) {
-			fs.mkdirSync(buildsPath + tempDirPath);
-		}
+	if (!fs.existsSync(buildsPath + tempDirPath)) {
+		fs.mkdirSync(buildsPath + tempDirPath);
+	}
 
+	if (deleteFiles.length) {
 		fs.writeFileSync(deleteFilesPath, JSON.stringify(deleteFiles), (err) => {
 			if (err) {
 				console.log(
@@ -198,6 +203,9 @@ router.get("/", async (req, res) => {
 		const version_details = await getVersionDetails(db, req.query);
 		if (!version_details.isValid) {
 			return res.status(500).send("Request Parameters are missing.");
+		}
+		if (version_details.curr === version_details.update) {
+			return res.status(200).send("Already up to date.");
 		}
 		// Get the release dates and get all the versions in between
 		const filesToDownload = await runReleaseDatesQuery(db, version_details);
@@ -224,7 +232,7 @@ router.get("/", async (req, res) => {
 		}
 	}
 
-	res.status(200).send("");
+	res.status(200).send("No need to update.");
 });
 
 export default router;

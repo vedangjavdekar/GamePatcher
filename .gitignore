@@ -1,5 +1,6 @@
 *.tar.gz
 
 build/
+builds/
 bin/
 logs/
